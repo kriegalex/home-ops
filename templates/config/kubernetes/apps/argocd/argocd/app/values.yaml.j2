@@ -1,0 +1,86 @@
+---
+# ArgoCD Helm Chart Values
+global:
+  domain: argocd.#{ cluster_domain }#
+
+configs:
+  params:
+    server.insecure: true  # We'll use Envoy Gateway for TLS termination
+
+  # Enable SOPS plugin for secret decryption
+  cmp:
+    create: true
+    plugins:
+      sops:
+        discover:
+          find:
+            command:
+              - sh
+              - "-c"
+              - "find . -name '*.sops.yaml' -o -name '*.sops.yml'"
+        generate:
+          command:
+            - sh
+            - "-c"
+            - "sops -d $ARGOCD_ENV_FILE > /tmp/decrypted.yaml && cat /tmp/decrypted.yaml"
+        lockRepo: false
+
+  secret:
+    # Create a secret for Git repository access (deploy key)
+    createSecret: true
+    githubSecret: ""  # Will be populated from sops-encrypted secret
+
+  repositories:
+    home-ops:
+      url: "#{ repository_url }#"
+      type: git
+      name: home-ops
+
+server:
+  ingress:
+    enabled: false  # We'll use Gateway API with Envoy
+
+  service:
+    type: LoadBalancer
+    loadBalancerIP: #{ cluster_gateway_addr }#  # Internal access
+
+  metrics:
+    enabled: true
+    serviceMonitor:
+      enabled: true
+
+controller:
+  metrics:
+    enabled: true
+    serviceMonitor:
+      enabled: true
+
+repoServer:
+  metrics:
+    enabled: true
+    serviceMonitor:
+      enabled: true
+
+  # Mount SOPS age key for decryption
+  volumes:
+    - name: sops-age
+      secret:
+        secretName: sops-age
+  volumeMounts:
+    - name: sops-age
+      mountPath: /helm-secrets-private-keys
+      readOnly: true
+
+  env:
+    - name: SOPS_AGE_KEY_FILE
+      value: /helm-secrets-private-keys/age.agekey
+
+applicationSet:
+  enabled: true
+  metrics:
+    enabled: true
+    serviceMonitor:
+      enabled: true
+
+notifications:
+  enabled: false  # Can be enabled later for notifications

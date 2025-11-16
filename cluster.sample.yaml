@@ -4,11 +4,11 @@
 node_cidr: ""
 
 # -- DNS servers to use for the cluster.
-#    (OPTIONAL) / (DEFAULT: ["1.1.1.1", "1.0.0.1"]) / (Cloudflare DNS)
+#    (OPTIONAL) / (DEFAULT: ["1.1.1.1", "1.0.0.1"]) / (Cloudflare DNS) or ["8.8.8.8", "8.8.4.4"] (Google DNS)
 # node_dns_servers: []
 
 # -- NTP servers to use for the cluster.
-#    (OPTIONAL) / (DEFAULT: ["162.159.200.1", "162.159.200.123"]) / (Cloudflare NTP)
+#    (OPTIONAL) / (DEFAULT: ["time.google.com", "time.cloudflare.com"])
 # node_ntp_servers: []
 
 # -- The default gateway for the nodes.
@@ -43,29 +43,54 @@ cluster_dns_gateway_addr: ""
 #    (REQUIRED) / (NOTE: Choose an unused IP in node_cidr)
 cluster_gateway_addr: ""
 
-# -- GitHub repository
-#    (REQUIRED) / (e.g. "onedr0p/cluster-template")
+# -- Git repository URL (Gitea, GitHub, GitLab, etc.)
+#    (REQUIRED) / (e.g. "https://gitea.example.com/username/home-ops" or "ssh://git@gitea.example.com:2222/username/home-ops.git")
+repository_url: ""
+
+# -- Git repository name (used for display purposes)
+#    (REQUIRED) / (e.g. "username/home-ops")
 repository_name: ""
 
-# -- GitHub repository branch
+# -- Git repository branch
 #    (OPTIONAL) / (DEFAULT: "main")
 # repository_branch: ""
 
+# -- Repository type (gitea, github, gitlab)
+#    (OPTIONAL) / (DEFAULT: "gitea")
+# repository_type: "gitea"
+
 # -- Repository visibility (public or private)
-#    (OPTIONAL) / (DEFAULT: "public") / (NOTE: See the README for information when set private)
+#    (OPTIONAL) / (DEFAULT: "public") / (NOTE: Private repos require SSH deploy key)
 # repository_visibility: ""
 
-# -- Domain you wish to use from your Cloudflare account
+# -- Domain name for your cluster
 #    (REQUIRED) / (e.g. "example.com")
-cloudflare_domain: ""
+cluster_domain: ""
 
-# -- API Token for Cloudflare with the 'Zone:DNS:Edit' and 'Account:Cloudflare Tunnel:Read' permissions
-#    (REQUIRED) (NOTE: See the README for information on creating this)
-cloudflare_token: ""
+# -- Infomaniak API token for DNS management (DNS-01 ACME challenges)
+#    (OPTIONAL) / (NOTE: Create at https://manager.infomaniak.com/v3/infomaniak-api with scopes: domain:read, dns:read, dns:write)
+# infomaniak_api_token: ""
 
-# -- The Load balancer IP for the external gateway
-#    (REQUIRED) / (NOTE: Choose an unused IP in node_cidr)
-cloudflare_gateway_addr: ""
+# -- DynDNS service for external access (if using dynamic IP)
+#    (OPTIONAL) / (e.g. "duckdns", "noip", "infomaniak")
+# dyndns_provider: ""
+
+# -- DynDNS credentials (provider-specific)
+#    (OPTIONAL)
+# dyndns_token: ""
+# dyndns_hostname: ""
+
+# -- The Load balancer IP for the external gateway (for public services like Nextcloud, Immich)
+#    (REQUIRED) / (NOTE: Choose an unused IP in node_cidr, this will be port-forwarded from your router)
+cluster_external_gateway_addr: ""
+
+# -- Tailscale authentication key for VPN access
+#    (OPTIONAL) / (NOTE: Generate at https://login.tailscale.com/admin/settings/keys)
+# tailscale_auth_key: ""
+
+# -- Enable Tailscale operator for mesh VPN access
+#    (OPTIONAL) / (DEFAULT: false)
+# tailscale_enabled: false
 
 # -- The load balancer mode for cilium.
 #    (OPTIONAL) / (DEFAULT: "dsr") / (NOTE: accepted values are 'dsr' or 'snat') / (REF: https://docs.cilium.io/en/stable/network/kubernetes/kubeproxy-free/)

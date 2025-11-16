@@ -1,0 +1,118 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: cilium
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://helm.cilium.io/
+    chart: cilium
+    targetRevision: 1.18.4
+    helm:
+      valuesObject:
+        autoDirectNodeRoutes: true
+        bpf:
+          masquerade: true
+          # Ref: https://github.com/siderolabs/talos/issues/10002
+          hostLegacyRouting: true
+        #% if cilium_bgp_enabled | default(false, true) %#
+        bgpControlPlane:
+          enabled: true
+        #% endif %#
+        cni:
+          # Required for pairing with Multus CNI
+          exclusive: false
+        cgroup:
+          automount:
+            enabled: false
+          hostRoot: /sys/fs/cgroup
+        dashboards:
+          enabled: true
+        endpointRoutes:
+          enabled: true
+        envoy:
+          rollOutPods: true
+          prometheus:
+            serviceMonitor:
+              enabled: true
+        gatewayAPI:
+          enabled: true
+        hubble:
+          enabled: false
+        ipam:
+          mode: kubernetes
+        ipv4NativeRoutingCIDR: "#{ cluster_pod_cidr }#"
+        k8sServiceHost: 127.0.0.1
+        k8sServicePort: 7445
+        kubeProxyReplacement: true
+        kubeProxyReplacementHealthzBindAddr: 0.0.0.0:10256
+        l2announcements:
+          enabled: true
+        loadBalancer:
+          algorithm: maglev
+          mode: "#{ cilium_loadbalancer_mode | default('dsr', true) }#"
+        localRedirectPolicy: true
+        operator:
+          dashboards:
+            enabled: true
+          prometheus:
+            enabled: true
+            serviceMonitor:
+              enabled: true
+          replicas: 1
+          rollOutPods: true
+        prometheus:
+          enabled: true
+          serviceMonitor:
+            enabled: true
+            trustCRDsExist: true
+        rollOutCiliumPods: true
+        routingMode: native
+        securityContext:
+          capabilities:
+            ciliumAgent:
+              - CHOWN
+              - KILL
+              - NET_ADMIN
+              - NET_RAW
+              - IPC_LOCK
+              - SYS_ADMIN
+              - SYS_RESOURCE
+              - DAC_OVERRIDE
+              - FOWNER
+              - SETGID
+              - SETUID
+              - PERFMON
+              - BPF
+            cleanCiliumState:
+              - NET_ADMIN
+              - SYS_ADMIN
+              - SYS_RESOURCE
+        socketLB:
+          hostNamespaceOnly: true
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: kube-system
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+    retry:
+      limit: 3
+      backoff:
+        duration: 30s
+        factor: 2
+        maxDuration: 5m
+  ignoreDifferences:
+    - group: ""
+      kind: ConfigMap
+      name: hubble-ca-cert
+      jsonPointers:
+        - /data/ca.crt
