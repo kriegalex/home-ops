@@ -1,0 +1,41 @@
+#% if spegel_enabled | default(true, true) %#
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: spegel
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: ghcr.io/spegel-org/helm-charts
+    chart: spegel
+    targetRevision: 0.5.1
+    helm:
+      valuesObject:
+        spegel:
+          containerdSock: /run/containerd/containerd.sock
+          containerdRegistryConfigPath: /etc/cri/conf.d/hosts
+        service:
+          registry:
+            hostPort: 29999
+        serviceMonitor:
+          enabled: true
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: kube-system
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+    retry:
+      limit: 3
+      backoff:
+        duration: 30s
+        factor: 2
+        maxDuration: 5m
+#% endif %#

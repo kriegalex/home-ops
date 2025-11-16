@@ -5,8 +5,7 @@ namespace: argocd
 
 resources:
   - ./cilium.yaml
-  # TODO: Add remaining kube-system applications:
-  # - ./coredns.yaml
-  # - ./metrics-server.yaml
-  # - ./reloader.yaml
-  # - ./spegel.yaml
+  - ./coredns.yaml
+  - ./metrics-server.yaml
+  - ./reloader.yaml
+  - ./spegel.yaml

@@ -1,9 +1,13 @@
 {
   $schema: "https://docs.renovatebot.com/renovate-schema.json",
+  // Gitea platform configuration
+  // To use with Gitea, set environment variables:
+  // - RENOVATE_PLATFORM=gitea
+  // - RENOVATE_ENDPOINT=https://your-gitea-instance.com/api/v1
+  // - RENOVATE_TOKEN=<your-gitea-token>
   extends: [
     "config:recommended",
     "docker:enableMajor",
-    "helpers:pinGitHubActionDigests",
     ":automergeBranch",
     ":dependencyDashboard",
     ":disableRateLimiting",
@@ -13,7 +17,7 @@
   dependencyDashboardTitle: "Renovate Dashboard 🤖",
   schedule: ["every weekend"],
   ignorePaths: ["**/*.sops.*"],
-  flux: {
+  argocd: {
     managerFilePatterns: ["/(^|/)kubernetes/.+\\.ya?ml(?:\\.j2)?$/"],
   },
   helmfile: {
@@ -36,18 +40,18 @@
       overrideDepName: "{{packageName}}",
     },
     {
-      description: "Flux Operator Group",
-      groupName: "flux-operator",
-      matchDatasources: ["docker"],
-      matchPackageNames: ["/flux-operator/", "/flux-instance/", "/flux-operator-manifests/"],
+      description: "ArgoCD Group",
+      groupName: "argocd",
+      matchDatasources: ["docker", "helm"],
+      matchPackageNames: ["/argo-cd/", "/argocd/", "argoproj/argo-cd"],
       group: {
         commitMessageTopic: "{{{groupName}}} group",
       },
-      minimumGroupSize: 3,
+      minimumGroupSize: 1,
     },
     {
-      description: "Auto-merge GitHub Actions",
-      matchManagers: ["github-actions"],
+      description: "Auto-merge Gitea Actions",
+      matchManagers: ["gitea-actions"],
       automerge: true,
       automergeType: "branch",
       matchUpdateTypes: ["minor", "patch", "digest"],
@@ -94,9 +98,9 @@
       commitMessageTopic: "chart {{depName}}",
     },
     {
-      matchManagers: ["github-actions"],
+      matchManagers: ["gitea-actions", "github-actions"],
       semanticCommitType: "ci",
-      semanticCommitScope: "github-action",
+      semanticCommitScope: "gitea-action",
       commitMessageTopic: "action {{depName}}",
     },
     {
@@ -130,8 +134,8 @@
       addLabels: ["renovate/helm"],
     },
     {
-      matchManagers: ["github-actions"],
-      addLabels: ["renovate/github-action"],
+      matchManagers: ["gitea-actions", "github-actions"],
+      addLabels: ["renovate/gitea-action"],
     },
     {
       matchDatasources: ["github-releases"],
