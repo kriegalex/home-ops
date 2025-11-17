@@ -27,8 +27,27 @@ tasks:
   default: task --list
 
   reconcile:
-    desc: Force Flux to pull in changes from your Git repository
-    cmd: flux --namespace flux-system reconcile kustomization flux-system --with-source
+    desc: Force ArgoCD to sync all applications from your Git repository
+    cmd: argocd app sync cluster-apps --grpc-web
     preconditions:
       - test -f {{.KUBECONFIG}}
-      - which flux
+      - which argocd
+
+  argocd:login:
+    desc: Login to ArgoCD (requires port-forward to be running)
+    cmd: argocd login localhost:8080 --grpc-web --insecure
+    preconditions:
+      - test -f {{.KUBECONFIG}}
+      - which argocd
+
+  argocd:dashboard:
+    desc: Open ArgoCD dashboard (starts port-forward)
+    cmd: kubectl port-forward svc/argocd-server -n argocd 8080:443
+    preconditions:
+      - test -f {{.KUBECONFIG}}
+
+  argocd:password:
+    desc: Get initial ArgoCD admin password
+    cmd: kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d && echo
+    preconditions:
+      - test -f {{.KUBECONFIG}}
